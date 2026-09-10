@@ -413,31 +413,30 @@ export default function ContactForm({ countries, representatives }: Props) {
         )}
 
         {anySent && (
-          <div className="mt-5 rounded-lg bg-ink/5 p-3 text-sm">
-            <p className="text-ink/70">
-              ¿No se abrió?{" "}
-              <button
-                type="button"
-                onClick={handleCopyFallback}
-                className="font-semibold text-accent-dark underline"
-              >
-                {copied ? "¡Copiado!" : "Copiá el mensaje"}
-              </button>{" "}
-              y pegalo en un mail nuevo
-              {lastSent?.channel !== "form" && lastSent
-                ? ` a ${lastSent.email}`
-                : ""}
-              .
-            </p>
+          <p className="mt-4 rounded-lg bg-ink/5 p-3 text-sm text-ink/70">
+            ¿No se abrió?{" "}
             <button
               type="button"
-              onClick={() => setStep(3)}
-              className="mt-3 w-full rounded-full bg-accent px-4 py-2.5 font-semibold text-ink transition hover:bg-accent-dark"
+              onClick={handleCopyFallback}
+              className="font-semibold text-accent-dark underline"
             >
-              Terminé
-            </button>
-          </div>
+              {copied ? "¡Copiado!" : "Copiá el mensaje"}
+            </button>{" "}
+            y pegalo en un mail nuevo
+            {lastSent?.channel !== "form" && lastSent
+              ? ` a ${lastSent.email}`
+              : ""}
+            .
+          </p>
         )}
+
+        <button
+          type="button"
+          onClick={() => setStep(3)}
+          className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
+        >
+          Terminé
+        </button>
       </div>
     );
   }
