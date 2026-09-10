@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: #f7f7f5;
+  color: #14181f;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* El textarea del mensaje: legible en mobile, sin zoom raro al enfocar en iOS. */
+textarea,
+input,
+select {
+  font-size: 16px;
+}

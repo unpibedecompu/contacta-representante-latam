@@ -1,0 +1,530 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { CountryConfig, Representative } from "@/lib/types";
+import { OFFICE_LABELS, COUNTRY_CODES } from "@/lib/countries";
+import { SUBJECT, buildBody, fullBody } from "@/lib/message-template";
+import {
+  buildGmailCompose,
+  buildOutlookCompose,
+  buildShareX,
+  buildShareFacebook,
+  buildShareWhatsApp,
+} from "@/lib/mailto";
+import { trackFunnel } from "@/lib/analytics";
+
+const OFFICE_ORDER: Record<string, number> = {
+  presidente: 0,
+  presidente_gobierno: 0,
+  vicepresidente: 1,
+  gobernador: 2,
+  vicegobernador: 3,
+  senador_nacional: 4,
+  diputado_nacional: 5,
+};
+
+const SHARE_URL = "https://controla-tu-ia.example"; // TODO: dominio real al deployar
+const SHARE_TEXT =
+  "Le escribí a mis representantes para pedir gobernanza sobre la IA de frontera. Vos también podés, toma un minuto:";
+
+/** Clave estable para un representante (el email puede ser "" en canal form). */
+const repKey = (r: Representative) =>
+  `${r.office}|${r.name}|${r.email || r.formUrl || ""}`;
+
+const repSubtitle = (r: Representative) =>
+  [
+    OFFICE_LABELS[r.office],
+    r.region ?? null,
+    r.party && r.party !== "—" ? r.party : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+type Step = 1 | 2 | 3;
+
+interface Props {
+  countries: CountryConfig[];
+  representatives: Representative[];
+}
+
+export default function ContactForm({ countries, representatives }: Props) {
+  const [step, setStep] = useState<Step>(1);
+
+  // Al cambiar de paso, mostrar la tarjeta desde arriba (el paso 2 es largo).
+  const topRef = useRef<HTMLDivElement>(null);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [step]);
+
+  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [keepUpdated, setKeepUpdated] = useState(true);
+
+  const [subject, setSubject] = useState(SUBJECT);
+  const [body, setBody] = useState("");
+  const [bodyEdited, setBodyEdited] = useState(false);
+
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set());
+  const [lastSent, setLastSent] = useState<Representative | null>(null);
+  const [copied, setCopied] = useState(false);
+
+
+  const country = countries.find((c) => c.code === countryCode) ?? null;
+
+  // Sugerencia de país por IP. `/cdn-cgi/trace` lo sirve Cloudflare gratis.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/cdn-cgi/trace")
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((text) => {
+        if (cancelled) return;
+        const loc = text.match(/^loc=([A-Z]{2})$/m)?.[1];
+        if (loc && COUNTRY_CODES.includes(loc)) {
+          setCountryCode((prev) => (prev === null ? loc : prev));
+        }
+      })
+      .catch(() => {
+        /* en local o fuera de Cloudflare no existe: el usuario elige a mano */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const regions = useMemo(() => {
+    if (!countryCode) return [];
+    const set = new Set<string>();
+    for (const r of representatives) {
+      if (r.country === countryCode && r.region) set.add(r.region);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }, [countryCode, representatives]);
+
+  const matches = useMemo(() => {
+    if (!countryCode) return [];
+    return representatives
+      .filter(
+        (r) =>
+          r.country === countryCode &&
+          (r.region === null || r.region === region),
+      )
+      .sort(
+        (a, b) =>
+          (OFFICE_ORDER[a.office] ?? 9) - (OFFICE_ORDER[b.office] ?? 9) ||
+          a.name.localeCompare(b.name, "es"),
+      );
+  }, [countryCode, region, representatives]);
+
+  function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!country || !name.trim() || matches.length === 0) return;
+    setSubject(SUBJECT);
+    if (!bodyEdited) setBody(buildBody({ userName: name.trim(), countryName: country.name }));
+    setSentKeys(new Set());
+    setLastSent(null);
+    setStep(2);
+    trackFunnel("message_generated", {
+      country: country.code,
+      region: region ?? "nacional",
+      matches: matches.length,
+    });
+  }
+
+  function markSent(rep: Representative, via: "gmail" | "outlook" | "form") {
+    setSentKeys((prev) => new Set(prev).add(repKey(rep)));
+    setLastSent(rep);
+    trackFunnel("email_client_opened", {
+      country: countryCode ?? "?",
+      office: rep.office,
+      channel: rep.channel ?? "email",
+      provider: via,
+    });
+  }
+
+  async function writeClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      /* no-op */
+    }
+  }
+
+  function handleForm(rep: Representative) {
+    if (!rep.formUrl) return;
+    void writeClipboard(`${subject}\n\n${fullBody(rep.name, body)}`);
+    window.open(rep.formUrl, "_blank", "noopener,noreferrer");
+    markSent(rep, "form");
+  }
+
+  async function handleCopyFallback() {
+    const rep = lastSent;
+    if (!rep) return;
+    trackFunnel("email_didnt_open_clicked", { office: rep.office });
+    const msg = fullBody(rep.name, body);
+    const text =
+      rep.channel === "form"
+        ? `${subject}\n\n${msg}`
+        : `Para: ${rep.email}\nAsunto: ${subject}\n\n${msg}`;
+    await writeClipboard(text);
+  }
+
+  function handleShare(network: "x" | "facebook" | "whatsapp") {
+    const url =
+      network === "x"
+        ? buildShareX(SHARE_TEXT, SHARE_URL)
+        : network === "facebook"
+          ? buildShareFacebook(SHARE_URL)
+          : buildShareWhatsApp(`${SHARE_TEXT} ${SHARE_URL}`);
+    window.open(url, "_blank", "noopener,noreferrer");
+    trackFunnel("shared", { network });
+  }
+
+  /* ----------------------------- STEP 1 ----------------------------- */
+  if (step === 1) {
+    return (
+      <form
+        onSubmit={handleGenerate}
+        className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6"
+      >
+        <div ref={topRef} className="scroll-mt-4" />
+        <StepBadge step={1} />
+
+        <label className="mb-2 block text-sm font-semibold">Tu país</label>
+        <div className="flex flex-wrap gap-2">
+          {countries.map((c) => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => {
+                setCountryCode(c.code);
+                setRegion(null);
+                trackFunnel("country_selected", { country: c.code });
+              }}
+              className={`rounded-full px-3 py-1.5 text-sm transition ${
+                countryCode === c.code
+                  ? "bg-accent font-semibold text-ink"
+                  : "bg-ink/5 text-ink/70 hover:bg-ink/10"
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        {country && regions.length > 0 && (
+          <div className="mt-5">
+            <label htmlFor="region" className="mb-2 block text-sm font-semibold">
+              Tu {country.regionLabel.toLowerCase()}
+            </label>
+            <select
+              id="region"
+              value={region ?? ""}
+              onChange={(e) => setRegion(e.target.value || null)}
+              className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
+            >
+              <option value="">Sólo contactar a nivel nacional</option>
+              {regions.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="mt-5">
+          <label htmlFor="name" className="mb-2 block text-sm font-semibold">
+            Tu nombre <span className="text-ink/40">(para firmar el mail)</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre y apellido"
+            className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
+          />
+        </div>
+
+        <div className="mt-4">
+          <label htmlFor="email" className="mb-2 block text-sm font-semibold">
+            Tu email <span className="text-ink/40">(opcional)</span>
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Para avisarte novedades de la campaña"
+            className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
+          />
+          <label className="mt-2 flex items-center gap-2 text-sm text-ink/70">
+            <input
+              type="checkbox"
+              checked={keepUpdated}
+              onChange={(e) => setKeepUpdated(e.target.checked)}
+            />
+            Quiero recibir novedades de la campaña
+          </label>
+        </div>
+
+        {country && matches.length === 0 && (
+          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Todavía no cargamos representantes para esta selección.
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={!country || !name.trim() || matches.length === 0}
+          className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Generar mi mensaje
+        </button>
+      </form>
+    );
+  }
+
+  /* ----------------------------- STEP 2 ----------------------------- */
+  if (step === 2 && country && matches.length > 0) {
+    const anySent = sentKeys.size > 0;
+    return (
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6">
+        <div ref={topRef} className="scroll-mt-4" />
+        <button
+          type="button"
+          onClick={() => setStep(1)}
+          className="mb-3 text-sm text-ink/50 hover:text-ink"
+        >
+          ← Volver
+        </button>
+        <StepBadge step={2} />
+
+        <label htmlFor="subject" className="mb-1 block text-sm font-semibold">
+          Asunto
+        </label>
+        <input
+          id="subject"
+          type="text"
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
+        />
+
+        <label htmlFor="body" className="mb-1 mt-4 block text-sm font-semibold">
+          Mensaje <span className="text-ink/40">(editalo si querés)</span>
+        </label>
+        <textarea
+          id="body"
+          value={body}
+          onChange={(e) => {
+            setBody(e.target.value);
+            setBodyEdited(true);
+          }}
+          rows={12}
+          className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2 leading-relaxed"
+        />
+        <p className="mt-1 text-xs text-ink/50">
+          A cada representante le llega encabezado con su saludo (“Estimado/a
+          …,”). Vos lo vas a ver recién al abrir el mail.
+        </p>
+
+        <h3 className="mb-1 mt-6 text-sm font-semibold">
+          Enviá tu mensaje{matches.length > 1 ? " a quien quieras" : ""}
+        </h3>
+        {matches.length > 12 && (
+          <p className="mb-2 text-xs text-ink/50">
+            Son {matches.length}. Escribile a los que más te importen — cada
+            envío cuenta por separado.
+          </p>
+        )}
+
+        <ul className="space-y-2">
+          {matches.map((rep) => {
+            const sent = sentKeys.has(repKey(rep));
+            const composeParams = {
+              to: rep.email,
+              subject,
+              body: fullBody(rep.name, body),
+            };
+            const btnCls =
+              "rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent-dark transition hover:bg-accent/20";
+            return (
+              <li
+                key={repKey(rep)}
+                className={`flex flex-col gap-2 rounded-lg border px-3 py-2.5 transition sm:flex-row sm:items-center sm:justify-between ${
+                  sent ? "border-accent bg-accent/5" : "border-ink/15"
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-semibold">
+                      {rep.name}
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        sent
+                          ? "bg-accent/25 text-accent-dark"
+                          : "bg-ink/10 text-ink/50"
+                      }`}
+                    >
+                      {sent ? "Enviado" : "Pendiente"}
+                    </span>
+                  </div>
+                  <span className="block truncate text-xs text-ink/60">
+                    {repSubtitle(rep)}
+                    {rep.channel === "form" ? " · por formulario web" : ""}
+                  </span>
+                </div>
+
+                <div className="flex shrink-0 gap-2">
+                  {rep.channel === "form" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleForm(rep)}
+                      className={btnCls}
+                    >
+                      Abrir formulario
+                    </button>
+                  ) : (
+                    <>
+                      <a
+                        href={buildGmailCompose(composeParams)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => markSent(rep, "gmail")}
+                        className={btnCls}
+                      >
+                        Gmail
+                      </a>
+                      <a
+                        href={buildOutlookCompose(composeParams)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => markSent(rep, "outlook")}
+                        className={btnCls}
+                      >
+                        Outlook
+                      </a>
+                    </>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        {!lastSent?.verified && lastSent && (
+          <p className="mt-2 text-xs text-amber-700">
+            ⚠ El último contacto no está verificado contra la fuente oficial.
+          </p>
+        )}
+
+        {anySent && (
+          <div className="mt-5 rounded-lg bg-ink/5 p-3 text-sm">
+            <p className="text-ink/70">
+              ¿No se abrió?{" "}
+              <button
+                type="button"
+                onClick={handleCopyFallback}
+                className="font-semibold text-accent-dark underline"
+              >
+                {copied ? "¡Copiado!" : "Copiá el mensaje"}
+              </button>{" "}
+              y pegalo en un mail nuevo
+              {lastSent?.channel !== "form" && lastSent
+                ? ` a ${lastSent.email}`
+                : ""}
+              .
+            </p>
+            <button
+              type="button"
+              onClick={() => setStep(3)}
+              className="mt-3 w-full rounded-full bg-accent px-4 py-2.5 font-semibold text-ink transition hover:bg-accent-dark"
+            >
+              Terminé
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ----------------------------- STEP 3 ----------------------------- */
+  const n = sentKeys.size;
+  return (
+    <div className="rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-ink/5 sm:p-6">
+      <div ref={topRef} className="scroll-mt-4" />
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-2xl">
+        ✓
+      </div>
+      <h2 className="text-xl font-bold">¡Gracias!</h2>
+      <p className="mx-auto mt-2 max-w-md text-ink/70">
+        {n > 0 ? (
+          <>
+            Le escribiste a <strong>{n}</strong>{" "}
+            {n === 1 ? "representante" : "representantes"}. Revisá que el mail haya
+            salido de tu casilla.
+          </>
+        ) : (
+          <>Cuando quieras, volvé y escribile a tus representantes.</>
+        )}
+      </p>
+
+      <div className="mt-6">
+        <p className="text-sm font-semibold uppercase tracking-wide text-ink/50">
+          Multiplicá el impacto
+        </p>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleShare("whatsapp")}
+            className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            Compartir en WhatsApp
+          </button>
+          <button
+            type="button"
+            onClick={() => handleShare("x")}
+            className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
+          >
+            Compartir en X
+          </button>
+          <button
+            type="button"
+            onClick={() => handleShare("facebook")}
+            className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
+          >
+            Compartir en Facebook
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setStep(2)}
+        className="mt-6 text-sm text-accent-dark underline hover:text-ink"
+      >
+        Escribirle a alguien más
+      </button>
+    </div>
+  );
+}
+
+function StepBadge({ step }: { step: number }) {
+  return (
+    <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-ink/40">
+      Paso {step} de 3
+    </p>
+  );
+}
