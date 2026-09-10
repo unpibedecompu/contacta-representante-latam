@@ -27,6 +27,11 @@ const SHARE_URL = "https://controla-tu-ia.example"; // TODO: dominio real al dep
 const SHARE_TEXT =
   "Le escribí a mis representantes para pedir gobernanza sobre la IA de frontera. Vos también podés, toma un minuto:";
 
+const INSTAGRAM_URL = "https://www.instagram.com/unpibedecompu/";
+const NEWSLETTER_URL = "https://unpibedecompu.substack.com";
+const REPO_URL =
+  "https://github.com/fourofclubs001/unpibedecompu/tree/master/strategy/contacta_representante_latam";
+
 /** Clave estable para un representante (el email puede ser "" en canal form). */
 const repKey = (r: Representative) =>
   `${r.office}|${r.name}|${r.email || r.formUrl || ""}`;
@@ -490,13 +495,55 @@ export default function ContactForm({ countries, representatives }: Props) {
         </div>
       </div>
 
+      <div className="mt-8 border-t border-ink/10 pt-6">
+        <p className="text-sm font-semibold uppercase tracking-wide text-ink/50">
+          Seguime
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink/70">
+          <strong>@unpibedecompu</strong> — Lucas Vitali. Explico en español los
+          riesgos catastróficos de la IA y qué se puede hacer al respecto. Reels,
+          carruseles y newsletter.
+        </p>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <a
+            href={INSTAGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
+          >
+            Instagram
+          </a>
+          <a
+            href={NEWSLETTER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
+          >
+            Newsletter
+          </a>
+        </div>
+      </div>
+
       <button
         type="button"
         onClick={() => setStep(2)}
-        className="mt-6 text-sm text-accent-dark underline hover:text-ink"
+        className="mt-6 block w-full text-sm text-accent-dark underline hover:text-ink"
       >
         Escribirle a alguien más
       </button>
+
+      <p className="mt-8 border-t border-ink/10 pt-6 text-xs text-ink/50">
+        Este formulario es de código abierto.{" "}
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-accent-dark underline hover:text-ink"
+        >
+          Colaborá en GitHub
+        </a>
+        .
+      </p>
     </div>
   );
 }
