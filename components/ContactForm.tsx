@@ -50,22 +50,28 @@ interface Props {
 export default function ContactForm({ countries, representatives }: Props) {
   const [step, setStep] = useState<Step>(1);
 
-  // Al cambiar de paso, mostrar la tarjeta desde arriba (el paso 2 es largo).
-  const topRef = useRef<HTMLDivElement>(null);
+  // Al cambiar de paso, volver arriba (el paso 2 es largo y el navegador
+  // ancla el scroll al botón que se apretó).
   const mounted = useRef(false);
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
       return;
     }
-    topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    const toTop = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    toTop();
+    // La lista larga sigue reflowando unos frames; reintentamos.
+    const r1 = requestAnimationFrame(toTop);
+    const t1 = window.setTimeout(toTop, 60);
+    return () => {
+      cancelAnimationFrame(r1);
+      window.clearTimeout(t1);
+    };
   }, [step]);
 
   const [countryCode, setCountryCode] = useState<string | null>(null);
   const [region, setRegion] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [keepUpdated, setKeepUpdated] = useState(true);
 
   const [subject, setSubject] = useState(SUBJECT);
   const [body, setBody] = useState("");
@@ -195,7 +201,6 @@ export default function ContactForm({ countries, representatives }: Props) {
         onSubmit={handleGenerate}
         className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6"
       >
-        <div ref={topRef} className="scroll-mt-4" />
         <StepBadge step={1} />
 
         <label className="mb-2 block text-sm font-semibold">Tu país</label>
@@ -256,28 +261,6 @@ export default function ContactForm({ countries, representatives }: Props) {
           />
         </div>
 
-        <div className="mt-4">
-          <label htmlFor="email" className="mb-2 block text-sm font-semibold">
-            Tu email <span className="text-ink/40">(opcional)</span>
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Para avisarte novedades de la campaña"
-            className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
-          />
-          <label className="mt-2 flex items-center gap-2 text-sm text-ink/70">
-            <input
-              type="checkbox"
-              checked={keepUpdated}
-              onChange={(e) => setKeepUpdated(e.target.checked)}
-            />
-            Quiero recibir novedades de la campaña
-          </label>
-        </div>
-
         {country && matches.length === 0 && (
           <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
             Todavía no cargamos representantes para esta selección.
@@ -300,7 +283,6 @@ export default function ContactForm({ countries, representatives }: Props) {
     const anySent = sentKeys.size > 0;
     return (
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6">
-        <div ref={topRef} className="scroll-mt-4" />
         <button
           type="button"
           onClick={() => setStep(1)}
@@ -464,7 +446,6 @@ export default function ContactForm({ countries, representatives }: Props) {
   const n = sentKeys.size;
   return (
     <div className="rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-ink/5 sm:p-6">
-      <div ref={topRef} className="scroll-mt-4" />
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-2xl">
         ✓
       </div>

@@ -16,6 +16,9 @@ body {
   background: #f7f7f5;
   color: #14181f;
   -webkit-font-smoothing: antialiased;
+  /* Evita que el navegador "ancle" el scroll al elemento que se apretó
+     cuando el contenido de abajo cambia de alto (paso 1 → paso 2). */
+  overflow-anchor: none;
 }
 
 /* El textarea del mensaje: legible en mobile, sin zoom raro al enfocar en iOS. */
