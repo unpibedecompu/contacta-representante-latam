@@ -1,0 +1,12 @@
+{
+  // Sitio 100% estático (next build → out/). Servido como Workers static
+  // assets, sin OpenNext ni SSR — evita que `wrangler deploy` intente migrar
+  // el proyecto a un Worker de Next.js (que espera un build de servidor, no
+  // un export estático) y falle con ENOENT en .next/standalone.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "contacta-representante-latam",
+  "compatibility_date": "2026-09-11",
+  "assets": {
+    "directory": "out"
+  }
+}

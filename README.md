@@ -79,26 +79,36 @@ verificados.
   con datos oficiales (`verified: true`), MX cargado pero sin verificar (sitios
   geo-bloqueados) → no se muestra en producción todavía.
 
-## Deploy — Cloudflare Pages (gratis, tráfico ilimitado)
+## Deploy — Cloudflare Workers (static assets, gratis, tráfico ilimitado)
 
-El plan free de Cloudflare Pages sirve assets estáticos con **requests y ancho de
-banda ilimitados** (único límite real: 500 builds/mes). Como el sitio es un
-export estático que se sirve desde el CDN, aguanta picos virales sin costo.
+El dashboard actual de Cloudflare unificó Pages dentro de "Workers & Pages": al
+conectar un repo por Git ahora crea un **Worker**, no un proyecto Pages
+clásico. El plan free sirve assets estáticos con **requests y ancho de banda
+ilimitados** (único límite real: 500 builds/mes). Como el sitio es un export
+estático servido desde el CDN, aguanta picos virales sin costo.
+
+El repo trae `wrangler.jsonc` con `assets.directory: "out"`, que le dice a
+Wrangler que esto es un sitio estático puro. **Es importante que ese archivo
+exista antes del primer deploy**: si `wrangler deploy` no encuentra
+`wrangler.jsonc`, autodetecta "Next.js" e intenta migrar el proyecto al
+adaptador OpenNext (pensado para SSR), lo cual falla porque este proyecto usa
+`output: "export"` (build estático, no server build) — el error se ve como
+`ENOENT: .../.next/standalone/.next/server/pages-manifest.json`.
 
 **Setup (una vez):**
 
-1. Cloudflare Dash → Workers & Pages → Create → Pages → Connect to Git → elegir
-   este repo.
+1. Cloudflare Dash → Workers & Pages → Create → Connect to Git → elegir este
+   repo.
 2. Build settings:
-   - Framework preset: **Next.js (Static HTML Export)**
    - Build command: `npm run build`
-   - Build output directory: `out`
-   - Root directory: `strategy/contacta_representante_latam` (este subdirectorio)
+   - Deploy command: `npx wrangler deploy`
+   - Root directory: dejar el default (`/`) — este repo ya es la raíz del proyecto
 3. (Opcional) Analytics: Cloudflare Dash → Web Analytics → Add a site → copiar el
-   token → en Pages → Settings → Environment variables agregar
-   `NEXT_PUBLIC_CF_BEACON_TOKEN = <token>`.
-4. Conectar dominio propio (Pages → Custom domains) y actualizar `SHARE_URL` en
-   `components/ContactForm.tsx`.
+   token → en el Worker → Settings → Variables agregar
+   `NEXT_PUBLIC_CF_BEACON_TOKEN = <token>`. Para el embudo (Umami), agregar
+   también `NEXT_PUBLIC_UMAMI_WEBSITE_ID = <website id de umami.is>`.
+4. Conectar dominio propio (Worker → Settings → Domains & Routes) y actualizar
+   `SHARE_URL` en `components/ContactForm.tsx`.
 
 La detección de país usa `/cdn-cgi/trace`, que Cloudflare responde
 automáticamente en cualquier sitio que aloje. En local ese endpoint no existe →
@@ -108,7 +118,7 @@ el país arranca sin preseleccionar y el usuario elige a mano.
 
 ```bash
 npm run build
-npx wrangler@latest pages deploy out --project-name contacta-representante
+npx wrangler deploy
 ```
 
 ## Fuera de scope (fase 2, no implementar todavía)

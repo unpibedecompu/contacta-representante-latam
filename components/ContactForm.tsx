@@ -74,7 +74,9 @@ export default function ContactForm({ countries, representatives }: Props) {
     };
   }, [step]);
 
-  const [countryCode, setCountryCode] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState<string | null>(
+    countries.length === 1 ? countries[0].code : null,
+  );
   const [region, setRegion] = useState<string | null>(null);
   const [name, setName] = useState("");
 
