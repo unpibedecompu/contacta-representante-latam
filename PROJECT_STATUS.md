@@ -16,9 +16,10 @@
   `output: "export"` (build estático). Si algún día se borra o se toca ese
   archivo y el deploy falla con `ENOENT: .../.next/standalone/.../pages-manifest.json`,
   es por esto.
-- No hay dominio propio conectado todavía (solo el subdominio `workers.dev`).
-  Pendiente: conectar dominio propio (Worker → Settings → Domains & Routes) y
-  actualizar `SHARE_URL` en `components/ContactForm.tsx`.
+- **Dominio propio conectado:** `noesinevitable.org` (comprado vía Cloudflare
+  Registrar, agregado en Worker → Settings → Domains → Custom Domains,
+  dominio raíz sin subdominio). `SHARE_URL` en `components/ContactForm.tsx`
+  ya apunta ahí. El `workers.dev` sigue funcionando en paralelo.
 - Nota de acceso: para pushear a este repo hace falta la cuenta de GitHub
   **`unpibedecompu`** (dueña del repo). La cuenta `grecsoc` (activa por
   default en esta máquina) no tiene permisos — da 403. Cambiar con
@@ -93,7 +94,6 @@
 
 ## Pendientes / ideas sueltas para retomar
 
-- [ ] Dominio propio.
 - [ ] Reactivar más países en `lib/countries.ts` cuando haya datos
       verificados (ver `DATA_TODO.md`).
 - [ ] Backend real de envío de mails — explícitamente fuera de alcance por

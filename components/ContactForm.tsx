@@ -24,7 +24,7 @@ const OFFICE_ORDER: Record<string, number> = {
   diputado_nacional: 5,
 };
 
-const SHARE_URL = "https://controla-tu-ia.example"; // TODO: dominio real al deployar
+const SHARE_URL = "https://noesinevitable.org";
 const SHARE_TEXT =
   "Le escribí a mis representantes para pedir gobernanza sobre la IA de frontera. Vos también podés, toma un minuto:";
 
@@ -32,6 +32,24 @@ const INSTAGRAM_URL = "https://www.instagram.com/unpibedecompu/";
 const NEWSLETTER_URL = "https://unpibedecompu.substack.com";
 const REPO_URL =
   "https://github.com/fourofclubs001/unpibedecompu/tree/master/strategy/contacta_representante_latam";
+
+const BLUEDOT_COURSES = [
+  {
+    name: "El futuro de la IA",
+    audience: "Para empezar, sin conocimientos técnicos",
+    url: "https://bluedot.org/courses/future-of-ai",
+  },
+  {
+    name: "Technical AI Safety",
+    audience: "Para perfiles técnicos",
+    url: "https://bluedot.org/courses/technical-ai-safety",
+  },
+  {
+    name: "Frontier AI Governance",
+    audience: "Para perfiles de política pública",
+    url: "https://bluedot.org/courses/ai-governance",
+  },
+];
 
 /** Clave estable para un representante (el email puede ser "" en canal form). */
 const repKey = (r: Representative) =>
@@ -487,6 +505,41 @@ export default function ContactForm({ countries, representatives }: Props) {
             Compartir en Facebook
           </button>
         </div>
+      </div>
+
+      <div className="mt-8 border-t border-ink/10 pt-6">
+        <p className="text-sm font-semibold uppercase tracking-wide text-ink/50">
+          Cursos gratuitos
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink/70">
+          BlueDot Impact da cursos gratuitos, en inglés, sobre los riesgos de
+          la IA y cómo reducirlos.
+        </p>
+        <ul className="mx-auto mt-3 max-w-md space-y-2 text-left">
+          {BLUEDOT_COURSES.map((course) => (
+            <li
+              key={course.url}
+              className="flex items-center justify-between gap-3 rounded-lg border border-ink/15 px-3 py-2.5"
+            >
+              <div className="min-w-0">
+                <span className="block truncate text-sm font-semibold">
+                  {course.name}
+                </span>
+                <span className="block truncate text-xs text-ink/60">
+                  {course.audience}
+                </span>
+              </div>
+              <a
+                href={course.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent-dark transition hover:bg-accent/20"
+              >
+                Ver curso
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="mt-8 border-t border-ink/10 pt-6">
