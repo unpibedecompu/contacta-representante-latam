@@ -1,6 +1,7 @@
 import { COUNTRIES, COUNTRY_CODES } from "@/lib/countries";
 import { getRepresentatives } from "@/lib/representatives";
 import ContactForm from "@/components/ContactForm";
+import siteCopy from "@/data/site-copy.json";
 
 // Página 100% estática. La detección de país pasó al cliente
 // (components/ContactForm → /cdn-cgi/trace, gratis en Cloudflare).
@@ -15,18 +16,12 @@ export default function Page() {
     <main className="mx-auto max-w-2xl px-4 pb-16 pt-8 sm:pt-12">
       <header className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent-dark">
-          Acción ciudadana
+          {siteCopy.pageTitle}
         </p>
         <h1 className="mt-1 text-3xl font-bold leading-tight sm:text-4xl">
-          Escribile a tu representante sobre los riesgos de la IA
+          {siteCopy.callToAction}
         </h1>
-        <p className="mt-3 text-base text-ink/70">
-          Los laboratorios que construyen la inteligencia artificial de frontera
-          advierten que el riesgo es comparable al de la guerra nuclear. Estos
-          riesgos <strong>no son inevitables</strong>: dependen de que haya
-          gobernanza. En un minuto podés pedirle a quienes te representan que
-          actúen.
-        </p>
+        <p className="mt-3 text-base text-ink/70">{siteCopy.explanation}</p>
       </header>
 
       {unverified > 0 && (

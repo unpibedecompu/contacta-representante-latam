@@ -12,6 +12,7 @@ import {
   buildShareWhatsApp,
 } from "@/lib/mailto";
 import { trackFunnel } from "@/lib/analytics";
+import siteCopy from "@/data/site-copy.json";
 
 const OFFICE_ORDER: Record<string, number> = {
   presidente: 0,
@@ -493,9 +494,7 @@ export default function ContactForm({ countries, representatives }: Props) {
           Seguime
         </p>
         <p className="mx-auto mt-2 max-w-md text-sm text-ink/70">
-          <strong>@unpibedecompu</strong> — Lucas Vitali. Explico en español los
-          riesgos catastróficos de la IA y qué se puede hacer al respecto. Reels,
-          carruseles y newsletter.
+          {siteCopy.seguimeDescription}
         </p>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <a
