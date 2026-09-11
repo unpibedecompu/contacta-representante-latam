@@ -1,8 +1,13 @@
 # Estado de los datos de representantes
 
-`data/representatives.json` — 781 filas. En producción sólo se sirven las
-`verified: true` (618); las `verified: false` (163, todo México) sólo se ven en
-`npm run dev`.
+`data/representatives.json` — 2054 filas. En producción sólo se sirven las
+`verified: true` (1495); las `verified: false` (559: México, Ecuador, Costa Rica,
+diputados de Rep. Dominicana y los presidentes con `channel: form`) sólo se ven
+en `npm run dev`.
+
+Países activos en el selector (`lib/countries.ts`): AR, BR, PA, UY. Colombia y
+Guatemala tienen datos verificados pero quedaron desactivados por decisión del
+dueño (2026-09-11).
 
 ## Cobertura actual
 
@@ -18,6 +23,23 @@
 | 🇲🇽 MX | presidente | 1 | ❌ | — | `channel: form` → SIDAC (`sidac.presidencia.gob.mx`). La Presidencia no publica email |
 | 🇲🇽 MX | senador_nacional | 126 | ❌ | senado.gob.mx open data | de un JSON oficial vía Wayback (jul-2026). **Sitios .gob.mx geo-bloqueados desde acá** |
 | 🇲🇽 MX | diputado_nacional | 36 | ❌ | sitl.diputados.gob.mx | parcial (36 de 500), vía Wayback. Sin email institucional; patrón no reconstruible |
+| 🇧🇷 BR | presidente | 1 | ❌ | gov.br/planalto | `channel: form` → Fale Conosco (CAPTCHA) |
+| 🇧🇷 BR | diputado_nacional | 513 | ✅ | dadosabertos.camara.leg.br API | **roster completo** (513/513), email del campo oficial de la API, 26 estados + DF |
+| 🇧🇷 BR | senador_nacional | 79 | ✅ | legis.senado.leg.br API | 79 de 81 — la API no publica email de 2 senadores |
+| 🇪🇨 EC | presidente | 1 | ❌ | contactociudadano.gob.ec | `channel: form` |
+| 🇪🇨 EC | diputado_nacional | 151 | 6 ✅ / 145 ❌ | asambleanacional.gob.ec/es/pleno-asambleistas | roster completo con provincia, pero **email inferido por patrón** `nombre.apellido@asambleanacional.gob.ec` en 145. El CSV LOTAIP era de la legislatura anterior; el "Distributivo de personal" vigente está roto en el servidor. 16 nacionales + 6 del exterior con `region: null`/circunscripción exterior |
+| 🇩🇴 DO | presidente | 1 | ❌ | presidencia.gob.do | `channel: form` |
+| 🇩🇴 DO | senador_nacional | 32 | ✅ | senadord.gob.do (Excel oficial) | **roster completo** (32/32). Email de la oficina senatorial por provincia (`<provincia>@senado.gob.do`) |
+| 🇩🇴 DO | diputado_nacional | 189 | ❌ | diputadosrd.gob.do/sil API | 189 de 190, email institucional individual; 1 sin correo (`channel: form`). 12 de circunscripción Nacional/Exterior con `region: null`. "San Juan de la Maguana" normalizado a "San Juan". **Bajado a `false`**: el SIL etiqueta 70 de los 189 con período 2020-2024 aunque los lista "En Curso"; 3 chequeados a mano (Genao Lanza, Doñé Tiburcio, Cedeño) sí son diputados actuales, así que parece metadata vieja de reelectos, pero no se verificó para los 70 |
+| 🇺🇾 UY | presidente | 1 | ❌ | presidencia.gub.uy | `channel: form` |
+| 🇺🇾 UY | diputado_nacional | 91 | ✅ | parlamento.gub.uy/sobreelparlamento/legisladores | 91 de 99 (8 suplentes sin email publicado). Email del `mailto:` oficial, 19 departamentos |
+| 🇺🇾 UY | senador_nacional | 25 | ✅ | parlamento.gub.uy | 25 de 30 (5 sin email publicado). Circunscripción nacional → `region: null` |
+| 🇬🇹 GT | presidente | 1 | ✅ | presidencia.gob.gt | Secretaría Privada de la Presidencia |
+| 🇬🇹 GT | diputado_nacional | 58 | ✅ | congreso.gob.gt | **parcial (58 de 160)**: distrito/bloque del endpoint oficial en vivo, pero el único PDF con emails es de la legislatura 2020-2024 → sólo los reelectos tienen email confirmado. El sitio está detrás de Incapsula/hCaptcha |
+| 🇨🇷 CR | presidente | 1 | ✅ | presidencia.go.cr | `despacho.presidente@presidencia.go.cr` |
+| 🇨🇷 CR | diputado_nacional | 57 | ❌ | asamblea.go.cr (vía Wayback 2026-02-03) | **roster completo** con email individual y provincia, pero de copia cacheada — el sitio en vivo geobloquea. Ojo: el snapshot puede ser de la legislatura saliente (la nueva asumió en mayo 2026) |
+| 🇵🇦 PA | presidente | 1 | ❌ | presidencia.gob.pa | `transparencia@presidencia.gob.pa` — genérico |
+| 🇵🇦 PA | diputado_nacional | 71 | ✅ | asamblea.gob.pa/Data/Diputado/List | **roster completo** (71/71), email individual y provincia del endpoint JSON oficial. El presidente de la Asamblea no tiene email → `channel: form` |
 
 ## Pendiente antes de lanzar
 
@@ -30,7 +52,31 @@
 - [x] AR: 257 diputados individuales — hecho.
 - [x] CO: 103 senadores individuales — hecho.
 - [ ] MX: 464 diputados restantes — iterar `sitl.diputados.gob.mx/LXVI_leg/curricula.php?dipt=<ID>` desde IP MX.
-- [ ] Los otros 13 países de la fase 1 (Bolivia, Brasil, Chile, Costa Rica, Ecuador, El Salvador, España, Guatemala, Honduras, Nicaragua, Panamá, Paraguay, Rep. Dominicana, Uruguay).
+- [x] Fase 2 (2026-09-11) — cargados: Brasil, Rep. Dominicana, Uruguay, Panamá (completos y verificados), Guatemala (parcial, verificado), Ecuador y Costa Rica (completos pero `verified: false`, no activados en el selector).
+- [ ] **España y Chile** — la extracción se cortó a mitad (límite de uso de la sesión) antes de escribir resultados. Fuentes confirmadas en la tabla de abajo; relanzar. Para España usar los emails que estén publicados aunque la cobertura sea parcial.
+- [ ] **Bolivia y Paraguay** — descartados por decisión del dueño (2026-09-11): la fuente de contacto es sólo institucional, sin email individual. Nota: Bolivia Senado sí tiene API con email individual (`apisi.senado.gob.bo/page/senadores`, 36/36); Diputados no (y el sitio publica 255 perfiles para 130 bancas, sin distinguir titular/suplente). Hay un borrador en `%LOCALAPPDATA%\Temp\claude-agent-output-latam\reps_BO.json` / `reps_PY.json` si se retoma.
+- [ ] DO: confirmar que los 70 diputados con período 2020-2024 en el SIL son de la legislatura 2024-2028. Vía rápida: cada diputado actual tiene ficha en `camaradediputados.gob.do/diputados/<nombre-slug>/` con su email — chequear que las 70 existan y coincidan (hay un listado de slugs en `%LOCALAPPDATA%\Temp\claude-agent-output-latam\do_old70_slugs.txt`). Si pasa, volver a `verified: true` y activar DO.
+- [ ] EC: conseguir emails confirmados de la legislatura 2025-2029 (el "Distributivo de personal" LOTAIP vigente está roto en el servidor) y subir a `verified: true`.
+- [ ] CR: verificar los 57 emails contra el sitio en vivo desde una IP no bloqueada y confirmar que corresponden a la legislatura 2026-2030.
+- [ ] GT: faltan ~102 diputados sin email confirmado (no reelectos). Buscar el directorio de la legislatura 2024-2028.
+- [ ] El Salvador, Honduras — tienen sitio oficial y contacto general, pero no encontré fuente oficial que confirme provincia/departamento por diputado. Retomar si aparece un directorio con esa columna.
+- [ ] Nicaragua — sitio oficial existe, pero el país está bajo régimen autoritario consolidado (Ortega-Murillo); mismo tipo de reparo institucional que llevó a excluir Venezuela. Pendiente decisión del dueño del proyecto sobre si incluirlo.
+
+### Fase 2 — fuentes verificadas por país (investigación 2026-09-11)
+
+| País | Contacto | Región/circuito | Notas |
+|---|---|---|---|
+| 🇪🇸 España | [Búsqueda de diputados](https://www.congreso.es/es/busqueda-de-diputados) / [Senado contacto](https://www.senado.es/web/relacionesciudadanos/atencionciudadano/contactar/index.html) | [BOCG](https://www.congreso.es/public_oficiales/L15/CONG/BOCG/D/BOCG-15-D-79.PDF) — cada acta publica la "Circunscripción" (provincia) | Emails de diputados sólo se publican si el diputado autoriza — cobertura parcial. `headOfGovernmentOffice: presidente_gobierno` |
+| 🇨🇱 Chile | [Senado — listado](https://tramitacion.senado.cl/appsenado/index.php?mo=senadores&ac=listado) (email + teléfono + región confirmados) / [Cámara — formulario](https://www.camara.cl/camara/formulario_contacto.aspx) | Región/circunscripción en el mismo listado del Senado; diputados por distrito en camara.cl | Senado con mejor cobertura confirmada que Cámara |
+| 🇧🇷 Brasil | [Contatos Câmara](https://www2.camara.leg.br/a-camara/presidencia/contatos) — patrón `dep.apellido@camara.leg.br` | [Filtro por UF](https://camara.leg.br/deputados/quem-sao/resultado?uf=SP) | Falta confirmar patrón de email del Senado (senado.leg.br) |
+| 🇪🇨 Ecuador | [Dataset LOTAIP (CSV)](https://www.asambleanacional.gob.ec/lotaip-2023/diciembre/literal2-2/Numeral-2.1-2.2-Conjunto-de-datos.csv) — email oficial por asambleísta | Cada ficha en [pleno-asambleistas](https://www.asambleanacional.gob.ec/es/pleno-asambleistas) dice "Asambleísta por [Provincia]" | Unicameral. Mejor fuente bulk de toda la fase 2 |
+| 🇬🇹 Guatemala | [Directorio PDF](https://www.congreso.gob.gt/assets/uploads/secciones/pdf/8c616-directorio-novena-legislatura.pdf) — email por diputado, patrón `nombre@congreso.gob.gt` | [diputados_distrito](https://www.congreso.gob.gt/diputados_distrito) | Unicameral |
+| 🇨🇷 Costa Rica | [Correos_Diputados](https://www.asamblea.go.cr/Diputados/SitePages/Correos_Diputados.aspx) | [DiputadosXProvincia](https://www.asamblea.go.cr/Diputados/SitePages/DiputadosXProvincia.aspx) | Unicameral. Sitio rechazó la conexión desde acá (posible geobloqueo tipo México) — confirmar con navegador normal |
+| 🇩🇴 Rep. Dominicana | [Senadores 2024-2028](https://www.senadord.gob.do/senadores/) — Excel descargable con correo/teléfono por provincia / [Cámara Diputados contacto](https://camaradediputados.gob.do/contacto/) | Mismo listado, organizado por provincia | |
+| 🇵🇦 Panamá | [Directorio de Diputados](https://www.asamblea.gob.pa/Diputados) — fichas individuales con patrón `nombre@asamblea.gob.pa` | Organizado por provincia/circuito electoral | Unicameral |
+| 🇵🇾 Paraguay | [Diputados — contacto](https://www.diputados.gov.py/index.php/contacto) / [Senado](https://www.senado.gov.py/) — sólo emails de oficina, no individuales confirmados | [Nómina por departamento](https://www.diputados.gov.py/diputados/nomina-departamentos) | Falta patrón de email individual — puede requerir `channel: form` o email institucional genérico |
+| 🇺🇾 Uruguay | [Correos electrónicos](https://parlamento.gub.uy/contactenos/representantes/listaemails) | [Legisladores](https://parlamento.gub.uy/sobreelparlamento/legisladores) — filtro por departamento | |
+| 🇧🇴 Bolivia | [diputados.gob.bo](https://diputados.gob.bo/), [senado.gob.bo](https://senado.gob.bo/institucional) — sin patrón de email individual confirmado | [Páginas por departamento](https://diputados.gob.bo/departamento/la-paz/) | Fuente de contacto más débil del grupo — verificar si hay directorio con emails antes de cargar `verified: true` |
 
 ### A evaluar (UX, no bloqueante)
 - [ ] **Lista larga de senadores**: en CO (circunscripción nacional) y MX (32 de lista nacional) el usuario ve TODOS los senadores en el selector, sin poder filtrar por región. Un CO ve ~120 opciones (presidente + 103 senadores + representantes de su depto). Considerar: buscador en el selector, o poner senadores detrás de un "ver senadores" colapsable, o preseleccionar presidente + cámara baja.
