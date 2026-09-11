@@ -42,7 +42,7 @@ export default function Page() {
 
       <footer className="mt-12 border-t border-ink/10 pt-6 text-xs text-ink/50">
         <p>
-          Fase 1: el mail se abre en tu propio cliente de correo (Gmail, Outlook,
+          El mail se abre en tu propio cliente de correo (Gmail, Outlook,
           la app de tu celular). No mandamos nada por vos y no guardamos tus
           datos. Sólo contamos cuántas personas llegan a la pantalla de envío.
         </p>

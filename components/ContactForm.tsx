@@ -255,7 +255,7 @@ export default function ContactForm({ countries, representatives }: Props) {
 
         <div className="mt-5">
           <label htmlFor="name" className="mb-2 block text-sm font-semibold">
-            Tu nombre <span className="text-ink/40">(para firmar el mail)</span>
+            Tu Nombre y Apellido <span className="text-ink/40">(para firmar el mail)</span>
           </label>
           <input
             id="name"
@@ -290,13 +290,22 @@ export default function ContactForm({ countries, representatives }: Props) {
     const anySent = sentKeys.size > 0;
     return (
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6">
-        <button
-          type="button"
-          onClick={() => setStep(1)}
-          className="mb-3 text-sm text-ink/50 hover:text-ink"
-        >
-          ← Volver
-        </button>
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            className="text-sm text-ink/50 hover:text-ink"
+          >
+            ← Volver
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep(3)}
+            className="text-sm text-ink/50 hover:text-ink"
+          >
+            Terminé →
+          </button>
+        </div>
         <StepBadge step={2} />
 
         <label htmlFor="subject" className="mb-1 block text-sm font-semibold">
@@ -323,20 +332,10 @@ export default function ContactForm({ countries, representatives }: Props) {
           rows={12}
           className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2 leading-relaxed"
         />
-        <p className="mt-1 text-xs text-ink/50">
-          A cada representante le llega encabezado con su saludo (“Estimado/a
-          …,”). Vos lo vas a ver recién al abrir el mail.
-        </p>
 
         <h3 className="mb-1 mt-6 text-sm font-semibold">
           Enviá tu mensaje{matches.length > 1 ? " a quien quieras" : ""}
         </h3>
-        {matches.length > 12 && (
-          <p className="mb-2 text-xs text-ink/50">
-            Son {matches.length}. Escribile a los que más te importen — cada
-            envío cuenta por separado.
-          </p>
-        )}
 
         <ul className="space-y-2">
           {matches.map((rep) => {
@@ -436,14 +435,6 @@ export default function ContactForm({ countries, representatives }: Props) {
             .
           </p>
         )}
-
-        <button
-          type="button"
-          onClick={() => setStep(3)}
-          className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
-        >
-          Terminé
-        </button>
       </div>
     );
   }
