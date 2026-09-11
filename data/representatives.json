@@ -6181,18 +6181,6 @@
   },
   {
     "country": "MX",
-    "region": null,
-    "office": "presidente",
-    "name": "Presidencia de la República",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://sidac.presidencia.gob.mx",
-    "party": "",
-    "verified": false,
-    "source": "https://www.gob.mx/presidencia"
-  },
-  {
-    "country": "MX",
     "region": "Aguascalientes",
     "office": "senador_nacional",
     "name": "Juan Antonio Martín del Campo Martín del Campo",
@@ -13732,18 +13720,6 @@
     "source": "https://legis.senado.leg.br/dadosabertos/senador/lista/atual"
   },
   {
-    "country": "BR",
-    "region": null,
-    "office": "presidente",
-    "name": "Presidência da República",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://www.gov.br/planalto/pt-br/fale-conosco",
-    "party": "",
-    "verified": false,
-    "source": "https://www.gov.br/planalto/pt-br/fale-conosco"
-  },
-  {
     "country": "EC",
     "region": "Azuay",
     "office": "diputado_nacional",
@@ -15252,30 +15228,6 @@
     "party": "",
     "verified": false,
     "source": "https://www.asambleanacional.gob.ec/es/pleno-asambleistas"
-  },
-  {
-    "country": "EC",
-    "region": null,
-    "office": "presidente",
-    "name": "Presidencia de la República del Ecuador",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://www.contactociudadano.gob.ec",
-    "party": "",
-    "verified": false,
-    "source": "https://www.presidencia.gob.ec/contacto/"
-  },
-  {
-    "country": "DO",
-    "region": null,
-    "office": "presidente",
-    "name": "Presidencia de la República Dominicana",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://minpre.gob.do/contactenos/",
-    "party": "",
-    "verified": false,
-    "source": "https://presidencia.gob.do/"
   },
   {
     "country": "DO",
@@ -17478,18 +17430,6 @@
     "verified": false
   },
   {
-    "country": "DO",
-    "region": "La Vega",
-    "office": "diputado_nacional",
-    "name": "Vilma Hortencia Morillo Vásquez",
-    "party": "Partido Revolucionario Moderno",
-    "source": "https://www.diputadosrd.gob.do/sil/legislador/3743",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://camaradediputados.gob.do/contacto/",
-    "verified": false
-  },
-  {
     "country": "UY",
     "region": "Soriano",
     "office": "diputado_nacional",
@@ -18648,18 +18588,6 @@
     "party": "Partido Colorado",
     "verified": true,
     "source": "https://parlamento.gub.uy/sobreelparlamento/legisladores"
-  },
-  {
-    "country": "UY",
-    "region": null,
-    "office": "presidente",
-    "name": "Presidencia de la República Oriental del Uruguay",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://www.gub.uy/presidencia/institucional/contacto",
-    "party": "",
-    "verified": false,
-    "source": "https://www.gub.uy/presidencia/institucional/contacto"
   },
   {
     "country": "GT",
@@ -19860,18 +19788,6 @@
     "verified": true,
     "party": "Partido Revolucionario Democrático",
     "source": "https://www.asamblea.gob.pa/Data/Diputado/List?page=1&pageSize=100&search="
-  },
-  {
-    "country": "PA",
-    "region": "Panamá",
-    "office": "diputado_nacional",
-    "name": "Crispiano Adames Navarro",
-    "channel": "form",
-    "email": "",
-    "formUrl": "https://www.asamblea.gob.pa/Diputados/CRISPIANO_ADAMES_NAVARRO",
-    "verified": false,
-    "party": "Partido Revolucionario Democrático",
-    "source": "https://www.asamblea.gob.pa/Diputados/CRISPIANO_ADAMES_NAVARRO"
   },
   {
     "country": "PA",
