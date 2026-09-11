@@ -50,10 +50,17 @@
   `693eaa79-33c9-4772-a9b1-37e21fd7c4e8`, cuenta asociada a
   `unpibedecompu@gmail.com`. Env var `NEXT_PUBLIC_UMAMI_WEBSITE_ID` ya
   seteada en el Worker.
-  - Riesgo conocido y aceptado por ahora: el free tier de Umami Cloud tiene
-    un tope mensual de eventos; si el sitio se viraliza (el objetivo del
-    proyecto) podría taparse justo en el pico. No se resolvió todavía —
-    revisar si conviene el plan pago o Cloudflare Analytics Engine si pasa.
+  - Riesgo conocido y aceptado por ahora: el free tier de Umami Cloud
+    ("Hobby") tiene un tope de **100.000 eventos/mes** (3 sitios, retención
+    6 meses); si el sitio se viraliza (el objetivo del proyecto) podría
+    taparse justo en el pico.
+  - Evaluado 2026-09-11: **si se acerca al tope, pasar al plan Pro de Umami
+    ($20/mes, 1M eventos/mes)** en vez de migrar a Cloudflare Analytics
+    Engine. Analytics Engine hoy es gratis pero requiere que el sitio deje
+    de ser un export estático puro (`assets.directory`) y tenga un Worker
+    con `fetch` handler real que llame `writeDataPoint()` — mucho mayor
+    costo de ingeniería que pagar $20/mes. No hay acción pendiente por
+    ahora, solo vigilar el dashboard de Umami si hay un pico de tráfico.
 - El hook `trackFunnel` (`lib/analytics.ts`) es vendor-agnostic — dispara a
   `window.umami`, `window.plausible`, `window.gtag` o `window.fathom`, el
   que esté cargado. Hoy solo Umami está cargado.
@@ -61,9 +68,12 @@
 ## Pendientes / ideas sueltas para retomar
 
 - [ ] Confirmar que `NEXT_PUBLIC_CF_BEACON_TOKEN` se agregó (si se quiere
-      Cloudflare Web Analytics además de Umami).
+      Cloudflare Web Analytics además de Umami). Pasos: Cloudflare Dash →
+      Web Analytics → Add a site → copiar el token del snippet → pegarlo
+      como env var en el Worker (Settings → Variables and Secrets) →
+      redeploy (es un `NEXT_PUBLIC_` var, se hornea en el build estático,
+      así que hace falta un build nuevo para que tome efecto).
 - [ ] Dominio propio.
-- [ ] Evaluar riesgo de cap gratuito de Umami si el tráfico crece fuerte.
 - [ ] Reactivar más países en `lib/countries.ts` cuando haya datos
       verificados (ver `DATA_TODO.md`).
 - [ ] Backend real de envío de mails — explícitamente fuera de alcance por
