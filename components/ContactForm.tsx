@@ -8,6 +8,7 @@ import {
   buildGmailCompose,
   buildOutlookCompose,
   buildGmailAppCompose,
+  buildGmailAppComposeAndroid,
   buildOutlookAppCompose,
   buildShareX,
   buildShareFacebook,
@@ -115,11 +116,14 @@ export default function ContactForm({ countries, representatives }: Props) {
   const [lastSent, setLastSent] = useState<Representative | null>(null);
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   // En mobile los botones "Gmail"/"Outlook" abren la app nativa (deep link);
   // en desktop, el compositor web. Se detecta una sola vez en el cliente.
   useEffect(() => {
-    setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+    const ua = navigator.userAgent;
+    setIsMobile(/Android|iPhone|iPad|iPod/i.test(ua));
+    setIsAndroid(/Android/i.test(ua));
   }, []);
 
   const country = countries.find((c) => c.code === countryCode) ?? null;
@@ -191,6 +195,32 @@ export default function ContactForm({ countries, representatives }: Props) {
       office: rep.office,
       channel: rep.channel ?? "email",
       provider: via,
+    });
+  }
+
+  /**
+   * Al clickear Gmail/Outlook sólo se abre el compositor y se registra el
+   * evento — no se marca como "Enviado" automáticamente. Eso lo decide la
+   * persona con el checkbox, porque no hay forma de saber si el mail
+   * realmente salió de su casilla.
+   */
+  function handleProviderOpen(rep: Representative, via: "gmail" | "outlook") {
+    setLastSent(rep);
+    trackFunnel("email_client_opened", {
+      country: countryCode ?? "?",
+      office: rep.office,
+      channel: rep.channel ?? "email",
+      provider: via,
+    });
+  }
+
+  function toggleSent(rep: Representative) {
+    setSentKeys((prev) => {
+      const next = new Set(prev);
+      const key = repKey(rep);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
     });
   }
 
@@ -388,15 +418,6 @@ export default function ContactForm({ countries, representatives }: Props) {
                     <span className="truncate text-sm font-semibold">
                       {rep.name}
                     </span>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                        sent
-                          ? "bg-accent/25 text-accent-dark"
-                          : "bg-ink/10 text-ink/50"
-                      }`}
-                    >
-                      {sent ? "Enviado" : "Pendiente"}
-                    </span>
                   </div>
                   <span className="block truncate text-xs text-ink/60">
                     {repSubtitle(rep)}
@@ -404,7 +425,7 @@ export default function ContactForm({ countries, representatives }: Props) {
                   </span>
                 </div>
 
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 items-center gap-3">
                   {rep.channel === "form" ? (
                     <button
                       type="button"
@@ -418,17 +439,19 @@ export default function ContactForm({ countries, representatives }: Props) {
                       <a
                         href={
                           isMobile
-                            ? buildGmailAppCompose(composeParams)
+                            ? isAndroid
+                              ? buildGmailAppComposeAndroid(composeParams)
+                              : buildGmailAppCompose(composeParams)
                             : buildGmailCompose(composeParams)
                         }
                         {...(!isMobile && {
                           target: "_blank",
                           rel: "noopener noreferrer",
                         })}
-                        onClick={() => markSent(rep, "gmail")}
+                        onClick={() => handleProviderOpen(rep, "gmail")}
                         className={btnCls}
                       >
-                        Gmail
+                        Enviar con Gmail
                       </a>
                       <a
                         href={
@@ -440,13 +463,24 @@ export default function ContactForm({ countries, representatives }: Props) {
                           target: "_blank",
                           rel: "noopener noreferrer",
                         })}
-                        onClick={() => markSent(rep, "outlook")}
+                        onClick={() => handleProviderOpen(rep, "outlook")}
                         className={btnCls}
                       >
-                        Outlook
+                        Enviar con Outlook
                       </a>
                     </>
                   )}
+                  <label className="flex shrink-0 cursor-pointer select-none items-center gap-1.5 text-[11px] font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={sent}
+                      onChange={() => toggleSent(rep)}
+                      className="h-3.5 w-3.5 rounded border-ink/30 text-accent-dark focus:ring-accent-dark"
+                    />
+                    <span className={sent ? "text-accent-dark" : "text-ink/50"}>
+                      Enviado
+                    </span>
+                  </label>
                 </div>
               </li>
             );

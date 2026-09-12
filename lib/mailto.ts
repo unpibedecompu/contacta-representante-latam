@@ -42,10 +42,11 @@ export function buildOutlookCompose(params: ComposeParams): string {
 }
 
 /**
- * Deep link a la app de Gmail (iOS/Android), esquema no oficial pero
- * ampliamente usado (`googlegmail:///co`). Si la app no está instalada,
- * el navegador no navega a ningún lado — por eso siempre queda como red
- * de contención el fallback "¿No se abrió? Copiá el mensaje".
+ * Deep link a la app de Gmail en iOS: esquema no oficial pero ampliamente
+ * usado (`googlegmail:///co`). Sólo funciona en iOS — la app de Gmail para
+ * Android no registra este esquema. Si la app no está instalada, el
+ * navegador no navega a ningún lado — por eso siempre queda como red de
+ * contención el fallback "¿No se abrió? Copiá el mensaje".
  */
 export function buildGmailAppCompose(params: ComposeParams): string {
   return `googlegmail:///co?${qs({
@@ -53,6 +54,18 @@ export function buildGmailAppCompose(params: ComposeParams): string {
     subject: params.subject,
     body: params.body,
   })}`;
+}
+
+/**
+ * Deep link a la app de Gmail en Android. Gmail no registra un esquema
+ * propio ahí (a diferencia de iOS), así que se envuelve la URL del
+ * compositor web en un intent `android.intent.action.VIEW` dirigido al
+ * paquete `com.google.android.gm`, con la misma URL como fallback si la
+ * app no está instalada.
+ */
+export function buildGmailAppComposeAndroid(params: ComposeParams): string {
+  const webUrl = buildGmailCompose(params);
+  return `intent://${webUrl.replace(/^https:\/\//, "")}#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
 }
 
 /**
