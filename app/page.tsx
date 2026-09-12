@@ -22,6 +22,14 @@ export default function Page() {
           {siteCopy.callToAction}
         </h1>
         <p className="mt-3 text-base text-ink/70">{siteCopy.explanation}</p>
+        <a
+          href={siteCopy.explanationSourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block text-sm font-medium text-accent-dark underline underline-offset-2"
+        >
+          {siteCopy.explanationSourceLabel}
+        </a>
       </header>
 
       {unverified > 0 && (
