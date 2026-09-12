@@ -21,7 +21,7 @@ export function buildMailto(params: ComposeParams): string {
   })}`;
 }
 
-/** Compositor web de Gmail, pre-cargado. Abre en una pestaña nueva. */
+/** Compositor web de Gmail, pre-cargado. Abre en una pestaña nueva (desktop). */
 export function buildGmailCompose(params: ComposeParams): string {
   return `https://mail.google.com/mail/?${qs({
     view: "cm",
@@ -32,9 +32,35 @@ export function buildGmailCompose(params: ComposeParams): string {
   })}`;
 }
 
-/** Compositor web de Outlook, pre-cargado. Abre en una pestaña nueva. */
+/** Compositor web de Outlook, pre-cargado. Abre en una pestaña nueva (desktop). */
 export function buildOutlookCompose(params: ComposeParams): string {
   return `https://outlook.office.com/mail/deeplink/compose?${qs({
+    to: params.to,
+    subject: params.subject,
+    body: params.body,
+  })}`;
+}
+
+/**
+ * Deep link a la app de Gmail (iOS/Android), esquema no oficial pero
+ * ampliamente usado (`googlegmail:///co`). Si la app no está instalada,
+ * el navegador no navega a ningún lado — por eso siempre queda como red
+ * de contención el fallback "¿No se abrió? Copiá el mensaje".
+ */
+export function buildGmailAppCompose(params: ComposeParams): string {
+  return `googlegmail:///co?${qs({
+    to: params.to,
+    subject: params.subject,
+    body: params.body,
+  })}`;
+}
+
+/**
+ * Deep link a la app de Outlook (iOS/Android), esquema no oficial
+ * (`ms-outlook://compose`). Misma salvedad que `buildGmailAppCompose`.
+ */
+export function buildOutlookAppCompose(params: ComposeParams): string {
+  return `ms-outlook://compose?${qs({
     to: params.to,
     subject: params.subject,
     body: params.body,

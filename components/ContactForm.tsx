@@ -7,6 +7,8 @@ import { SUBJECT, buildBody, fullBody } from "@/lib/message-template";
 import {
   buildGmailCompose,
   buildOutlookCompose,
+  buildGmailAppCompose,
+  buildOutlookAppCompose,
   buildShareX,
   buildShareFacebook,
   buildShareWhatsApp,
@@ -112,7 +114,13 @@ export default function ContactForm({ countries, representatives }: Props) {
   const [sentKeys, setSentKeys] = useState<Set<string>>(new Set());
   const [lastSent, setLastSent] = useState<Representative | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  // En mobile los botones "Gmail"/"Outlook" abren la app nativa (deep link);
+  // en desktop, el compositor web. Se detecta una sola vez en el cliente.
+  useEffect(() => {
+    setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+  }, []);
 
   const country = countries.find((c) => c.code === countryCode) ?? null;
 
@@ -408,18 +416,30 @@ export default function ContactForm({ countries, representatives }: Props) {
                   ) : (
                     <>
                       <a
-                        href={buildGmailCompose(composeParams)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={
+                          isMobile
+                            ? buildGmailAppCompose(composeParams)
+                            : buildGmailCompose(composeParams)
+                        }
+                        {...(!isMobile && {
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                        })}
                         onClick={() => markSent(rep, "gmail")}
                         className={btnCls}
                       >
                         Gmail
                       </a>
                       <a
-                        href={buildOutlookCompose(composeParams)}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={
+                          isMobile
+                            ? buildOutlookAppCompose(composeParams)
+                            : buildOutlookCompose(composeParams)
+                        }
+                        {...(!isMobile && {
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                        })}
                         onClick={() => markSent(rep, "outlook")}
                         className={btnCls}
                       >
