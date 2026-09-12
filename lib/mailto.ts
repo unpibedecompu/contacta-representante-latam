@@ -57,15 +57,24 @@ export function buildGmailAppCompose(params: ComposeParams): string {
 }
 
 /**
- * Deep link a la app de Gmail en Android. Gmail no registra un esquema
- * propio ahí (a diferencia de iOS), así que se envuelve la URL del
- * compositor web en un intent `android.intent.action.VIEW` dirigido al
- * paquete `com.google.android.gm`, con la misma URL como fallback si la
- * app no está instalada.
+ * Deep link a la app de Gmail en Android. `mail.google.com/mail/?view=cm`
+ * es un truco sólo del compositor *web*: si se envuelve esa URL en un
+ * intent, Android abre igual la app de Gmail pero en la bandeja de
+ * entrada, ignorando los parámetros (probado en dispositivo). Lo que sí
+ * entiende la app es un `mailto:` real, así que se arma ese URI (mismo
+ * formato que `buildMailto`) y se envuelve en un intent `android.intent
+ * .action.VIEW` forzado al paquete `com.google.android.gm`. Al ser
+ * "mailto" un esquema opaco (sin autoridad), la parte antes de `#Intent;`
+ * va sin `//`, para que Android reconstruya `mailto:destinatario?...` en
+ * vez de `mailto://destinatario?...`.
  */
 export function buildGmailAppComposeAndroid(params: ComposeParams): string {
-  const webUrl = buildGmailCompose(params);
-  return `intent://${webUrl.replace(/^https:\/\//, "")}#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+  const ssp = `${encodeURIComponent(params.to)}?${qs({
+    subject: params.subject,
+    body: params.body,
+  })}`;
+  const fallback = encodeURIComponent(buildGmailCompose(params));
+  return `intent:${ssp}#Intent;scheme=mailto;package=com.google.android.gm;S.browser_fallback_url=${fallback};end`;
 }
 
 /**
