@@ -7,7 +7,6 @@ import type { CountryConfig } from "./types";
 export const COUNTRIES: CountryConfig[] = [
   { code: "AR", name: "Argentina", bicameral: true, regionLabel: "Provincia", headOfGovernmentOffice: "presidente" },
   // { code: "BO", name: "Bolivia", bicameral: true, regionLabel: "Departamento", headOfGovernmentOffice: "presidente" },
-  { code: "BR", name: "Brasil", bicameral: true, regionLabel: "Estado", headOfGovernmentOffice: "presidente" },
   // { code: "CL", name: "Chile", bicameral: true, regionLabel: "Región", headOfGovernmentOffice: "presidente" },
   // { code: "CO", name: "Colombia", bicameral: true, regionLabel: "Departamento", headOfGovernmentOffice: "presidente" },
   // CO, CR, EC, GT y DO tienen datos cargados pero no están activados (ver DATA_TODO.md).

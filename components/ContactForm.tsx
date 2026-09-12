@@ -38,18 +38,24 @@ const BLUEDOT_COURSES = [
     name: "El futuro de la IA",
     audience: "Para empezar, sin conocimientos técnicos",
     url: "https://bluedot.org/courses/future-of-ai",
+    image: "/bluedot/future-of-ai.png",
   },
   {
     name: "Technical AI Safety",
     audience: "Para perfiles técnicos",
     url: "https://bluedot.org/courses/technical-ai-safety",
+    image: "/bluedot/technical-ai-safety.png",
   },
   {
     name: "Frontier AI Governance",
     audience: "Para perfiles de política pública",
     url: "https://bluedot.org/courses/ai-governance",
+    image: "/bluedot/frontier-ai-governance.png",
   },
 ];
+
+const CHIP_CLS =
+  "rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-accent-dark";
 
 /** Clave estable para un representante (el email puede ser "" en canal form). */
 const repKey = (r: Representative) =>
@@ -317,11 +323,7 @@ export default function ContactForm({ countries, representatives }: Props) {
           >
             ← Volver
           </button>
-          <button
-            type="button"
-            onClick={() => setStep(3)}
-            className="text-sm text-ink/50 hover:text-ink"
-          >
+          <button type="button" onClick={() => setStep(3)} className={CHIP_CLS}>
             Terminé →
           </button>
         </div>
@@ -454,6 +456,14 @@ export default function ContactForm({ countries, representatives }: Props) {
             .
           </p>
         )}
+
+        <button
+          type="button"
+          onClick={() => setStep(3)}
+          className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
+        >
+          Terminé →
+        </button>
       </div>
     );
   }
@@ -462,6 +472,15 @@ export default function ContactForm({ countries, representatives }: Props) {
   const n = sentKeys.size;
   return (
     <div className="rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-ink/5 sm:p-6">
+      <div className="mb-3 text-left">
+        <button
+          type="button"
+          onClick={() => setStep(2)}
+          className="text-sm text-ink/50 hover:text-ink"
+        >
+          ← Volver
+        </button>
+      </div>
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-2xl">
         ✓
       </div>
@@ -515,27 +534,28 @@ export default function ContactForm({ countries, representatives }: Props) {
           BlueDot Impact da cursos gratuitos, en inglés, sobre los riesgos de
           la IA y cómo reducirlos.
         </p>
-        <ul className="mx-auto mt-3 max-w-md space-y-2 text-left">
+        <ul className="mt-4 grid grid-cols-1 gap-3 text-left sm:grid-cols-3">
           {BLUEDOT_COURSES.map((course) => (
-            <li
-              key={course.url}
-              className="flex items-center justify-between gap-3 rounded-lg border border-ink/15 px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <span className="block truncate text-sm font-semibold">
-                  {course.name}
-                </span>
-                <span className="block truncate text-xs text-ink/60">
-                  {course.audience}
-                </span>
-              </div>
+            <li key={course.url}>
               <a
                 href={course.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent-dark transition hover:bg-accent/20"
+                className="flex h-full flex-col overflow-hidden rounded-xl border border-ink/15 transition hover:border-accent hover:shadow-md"
               >
-                Ver curso
+                {/* eslint-disable-next-line @next/next/no-img-element -- export estático, sin optimizador */}
+                <img
+                  src={course.image}
+                  alt={`Curso ${course.name} de BlueDot`}
+                  className="aspect-[8/7] w-full object-cover"
+                />
+                <div className="flex flex-1 flex-col p-3">
+                  <span className="text-sm font-semibold">{course.name}</span>
+                  <span className="mb-3 mt-0.5 text-xs text-ink/60">{course.audience}</span>
+                  <span className="mt-auto inline-block self-start rounded-full bg-accent/10 px-3 py-1.5 text-sm font-semibold text-accent-dark">
+                    Ver curso
+                  </span>
+                </div>
               </a>
             </li>
           ))}

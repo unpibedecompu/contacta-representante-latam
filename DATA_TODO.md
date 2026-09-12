@@ -1,7 +1,7 @@
 # Estado de los datos de representantes
 
-`data/representatives.json` — 2047 filas. En producción sólo se sirven las
-`verified: true` (1495); las `verified: false` (552: México, Ecuador, Costa Rica
+`data/representatives.json` — 1455 filas. En producción sólo se sirven las
+`verified: true` (903); las `verified: false` (552: México, Ecuador, Costa Rica
 y diputados de Rep. Dominicana) sólo se ven en `npm run dev`.
 
 Regla (2026-09-11): **no se cargan** contactos por formulario web (`channel: form`).
@@ -9,9 +9,19 @@ Si un cargo no tiene email publicado, se omite. Las casillas institucionales de
 presidencia (audiencias@, contacto@, transparencia@…) sí se cargan como fila
 `presidente` cuando son el único canal oficial por email.
 
-Países activos en el selector (`lib/countries.ts`): AR, BR, PA, UY. Colombia y
+Países activos en el selector (`lib/countries.ts`): AR, PA, UY. Colombia y
 Guatemala tienen datos verificados pero quedaron desactivados por decisión del
 dueño (2026-09-11).
+
+**Brasil, descartado (2026-09-11):** se había cargado el roster completo
+(513 diputados + 79 senadores + presidencia, ver fuentes en la tabla de Fase 2
+más abajo) y se había agregado plantilla de mail en portugués, pero el dueño
+decidió sacarlo del alcance del proyecto — la audiencia del proyecto es
+hispanohablante y el dueño no habla portugués. Se borraron las filas de
+`representatives.json`, la plantilla en portugués (`subjectPt`/`mailContentPt`
+en `data/site-copy.json`) y el soporte de idioma en `lib/message-template.ts`.
+Si se retoma, las fuentes oficiales (API de dadosabertos.camara.leg.br y
+legis.senado.leg.br) están documentadas en la tabla de Fase 2.
 
 ## Cobertura actual
 
@@ -26,8 +36,6 @@ dueño (2026-09-11).
 | 🇨🇴 CO | senador_nacional | 103 | ✅ | app.senado.gov.co API | **roster completo** del Senado 2026-2030 (son 103 bancas, no 108: las 5 de Comunes/FARC expiraron). Emails del API oficial "Datos Abiertos", cross-checeados contra una captura de Wayback |
 | 🇲🇽 MX | senador_nacional | 126 | ❌ | senado.gob.mx open data | de un JSON oficial vía Wayback (jul-2026). **Sitios .gob.mx geo-bloqueados desde acá** |
 | 🇲🇽 MX | diputado_nacional | 36 | ❌ | sitl.diputados.gob.mx | parcial (36 de 500), vía Wayback. Sin email institucional; patrón no reconstruible |
-| 🇧🇷 BR | diputado_nacional | 513 | ✅ | dadosabertos.camara.leg.br API | **roster completo** (513/513), email del campo oficial de la API, 26 estados + DF |
-| 🇧🇷 BR | senador_nacional | 79 | ✅ | legis.senado.leg.br API | 79 de 81 — la API no publica email de 2 senadores |
 | 🇪🇨 EC | diputado_nacional | 151 | 6 ✅ / 145 ❌ | asambleanacional.gob.ec/es/pleno-asambleistas | roster completo con provincia, pero **email inferido por patrón** `nombre.apellido@asambleanacional.gob.ec` en 145. El CSV LOTAIP era de la legislatura anterior; el "Distributivo de personal" vigente está roto en el servidor. 16 nacionales + 6 del exterior con `region: null`/circunscripción exterior |
 | 🇩🇴 DO | senador_nacional | 32 | ✅ | senadord.gob.do (Excel oficial) | **roster completo** (32/32). Email de la oficina senatorial por provincia (`<provincia>@senado.gob.do`) |
 | 🇩🇴 DO | diputado_nacional | 188 | ❌ | diputadosrd.gob.do/sil API | 188 de 190, email institucional individual (1 sin correo, eliminada). 12 de circunscripción Nacional/Exterior con `region: null`. "San Juan de la Maguana" normalizado a "San Juan". **Bajado a `false`**: el SIL etiqueta 70 de los 189 con período 2020-2024 aunque los lista "En Curso"; 3 chequeados a mano (Genao Lanza, Doñé Tiburcio, Cedeño) sí son diputados actuales, así que parece metadata vieja de reelectos, pero no se verificó para los 70 |
@@ -51,7 +59,7 @@ dueño (2026-09-11).
 - [x] AR: 257 diputados individuales — hecho.
 - [x] CO: 103 senadores individuales — hecho.
 - [ ] MX: 464 diputados restantes — iterar `sitl.diputados.gob.mx/LXVI_leg/curricula.php?dipt=<ID>` desde IP MX.
-- [x] Fase 2 (2026-09-11) — cargados: Brasil, Rep. Dominicana, Uruguay, Panamá (completos y verificados), Guatemala (parcial, verificado), Ecuador y Costa Rica (completos pero `verified: false`, no activados en el selector).
+- [x] Fase 2 (2026-09-11) — cargados: Rep. Dominicana, Uruguay, Panamá (completos y verificados), Guatemala (parcial, verificado), Ecuador y Costa Rica (completos pero `verified: false`, no activados en el selector). Brasil se cargó y luego se descartó por decisión del dueño (ver nota más arriba).
 - [ ] **España y Chile** — la extracción se cortó a mitad (límite de uso de la sesión) antes de escribir resultados. Fuentes confirmadas en la tabla de abajo; relanzar. Para España usar los emails que estén publicados aunque la cobertura sea parcial.
 - [ ] **Bolivia y Paraguay** — descartados por decisión del dueño (2026-09-11): la fuente de contacto es sólo institucional, sin email individual. Nota: Bolivia Senado sí tiene API con email individual (`apisi.senado.gob.bo/page/senadores`, 36/36); Diputados no (y el sitio publica 255 perfiles para 130 bancas, sin distinguir titular/suplente). Hay un borrador en `%LOCALAPPDATA%\Temp\claude-agent-output-latam\reps_BO.json` / `reps_PY.json` si se retoma.
 - [ ] DO: confirmar que los 70 diputados con período 2020-2024 en el SIL son de la legislatura 2024-2028. Vía rápida: cada diputado actual tiene ficha en `camaradediputados.gob.do/diputados/<nombre-slug>/` con su email — chequear que las 70 existan y coincidan (hay un listado de slugs en `%LOCALAPPDATA%\Temp\claude-agent-output-latam\do_old70_slugs.txt`). Si pasa, volver a `verified: true` y activar DO.
