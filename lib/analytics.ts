@@ -10,11 +10,22 @@
  * Cloudflare Web Analytics (gratis, ilimitado) cubre los pageviews por separado.
  */
 export type FunnelEvent =
+  | "step_viewed"
   | "country_selected"
+  | "region_selected"
   | "message_generated"
+  | "step_back_clicked"
+  | "view_representatives_clicked"
+  | "subject_edited"
+  | "body_edited"
+  | "finish_clicked"
   | "email_client_opened"
   | "email_didnt_open_clicked"
-  | "shared";
+  | "shared"
+  | "course_clicked"
+  | "social_link_clicked"
+  | "write_another_clicked"
+  | "repo_link_clicked";
 
 type Props = Record<string, string | number | boolean>;
 

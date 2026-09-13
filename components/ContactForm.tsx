@@ -83,6 +83,10 @@ interface Props {
 export default function ContactForm({ countries, representatives }: Props) {
   const [step, setStep] = useState<Step>(1);
 
+  useEffect(() => {
+    trackFunnel("step_viewed", { step });
+  }, [step]);
+
   // Al cambiar de paso, volver arriba (el paso 2 es largo y el navegador
   // ancla el scroll al botón que se apretó).
   const mounted = useRef(false);
@@ -111,6 +115,7 @@ export default function ContactForm({ countries, representatives }: Props) {
   const [subject, setSubject] = useState(SUBJECT);
   const [body, setBody] = useState("");
   const [bodyEdited, setBodyEdited] = useState(false);
+  const [subjectEdited, setSubjectEdited] = useState(false);
 
   const [lastSent, setLastSent] = useState<Representative | null>(null);
   const [copied, setCopied] = useState(false);
@@ -274,7 +279,11 @@ export default function ContactForm({ countries, representatives }: Props) {
             <select
               id="region"
               value={region ?? ""}
-              onChange={(e) => setRegion(e.target.value || null)}
+              onChange={(e) => {
+                const value = e.target.value || null;
+                setRegion(value);
+                trackFunnel("region_selected", { region: value ?? "nacional" });
+              }}
               className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
             >
               <option value="">Sólo contactar a nivel nacional</option>
@@ -326,12 +335,22 @@ export default function ContactForm({ countries, representatives }: Props) {
         <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setStep(1)}
+            onClick={() => {
+              trackFunnel("step_back_clicked", { step: 2 });
+              setStep(1);
+            }}
             className="text-sm text-ink/50 hover:text-ink"
           >
             ← Volver
           </button>
-          <button type="button" onClick={() => setStep(3)} className={CHIP_CLS}>
+          <button
+            type="button"
+            onClick={() => {
+              trackFunnel("view_representatives_clicked", { location: "top" });
+              setStep(3);
+            }}
+            className={CHIP_CLS}
+          >
             Ver representantes →
           </button>
         </div>
@@ -344,7 +363,13 @@ export default function ContactForm({ countries, representatives }: Props) {
           id="subject"
           type="text"
           value={subject}
-          onChange={(e) => setSubject(e.target.value)}
+          onChange={(e) => {
+            setSubject(e.target.value);
+            if (!subjectEdited) {
+              setSubjectEdited(true);
+              trackFunnel("subject_edited");
+            }
+          }}
           className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2"
         />
 
@@ -356,6 +381,9 @@ export default function ContactForm({ countries, representatives }: Props) {
           value={body}
           onChange={(e) => {
             setBody(e.target.value);
+            if (!bodyEdited) {
+              trackFunnel("body_edited");
+            }
             setBodyEdited(true);
           }}
           rows={12}
@@ -364,7 +392,10 @@ export default function ContactForm({ countries, representatives }: Props) {
 
         <button
           type="button"
-          onClick={() => setStep(3)}
+          onClick={() => {
+            trackFunnel("view_representatives_clicked", { location: "bottom" });
+            setStep(3);
+          }}
           className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
         >
           Ver representantes →
@@ -380,12 +411,22 @@ export default function ContactForm({ countries, representatives }: Props) {
         <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={() => {
+              trackFunnel("step_back_clicked", { step: 3 });
+              setStep(2);
+            }}
             className="text-sm text-ink/50 hover:text-ink"
           >
             ← Volver
           </button>
-          <button type="button" onClick={() => setStep(4)} className={CHIP_CLS}>
+          <button
+            type="button"
+            onClick={() => {
+              trackFunnel("finish_clicked", { location: "top" });
+              setStep(4);
+            }}
+            className={CHIP_CLS}
+          >
             Terminé →
           </button>
         </div>
@@ -498,7 +539,10 @@ export default function ContactForm({ countries, representatives }: Props) {
 
         <button
           type="button"
-          onClick={() => setStep(4)}
+          onClick={() => {
+            trackFunnel("finish_clicked", { location: "bottom" });
+            setStep(4);
+          }}
           className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
         >
           Terminé →
@@ -514,7 +558,10 @@ export default function ContactForm({ countries, representatives }: Props) {
       <div className="mb-3 text-left">
         <button
           type="button"
-          onClick={() => setStep(3)}
+          onClick={() => {
+            trackFunnel("step_back_clicked", { step: 4 });
+            setStep(3);
+          }}
           className="text-sm text-ink/50 hover:text-ink"
         >
           ← Volver
@@ -574,6 +621,7 @@ export default function ContactForm({ countries, representatives }: Props) {
                 href={course.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackFunnel("course_clicked", { course: course.name })}
                 className="flex h-full flex-col overflow-hidden rounded-xl border border-ink/15 transition hover:border-accent hover:shadow-md"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element -- export estático, sin optimizador */}
@@ -607,6 +655,7 @@ export default function ContactForm({ countries, representatives }: Props) {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackFunnel("social_link_clicked", { network: "instagram" })}
             className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
           >
             Instagram
@@ -615,6 +664,7 @@ export default function ContactForm({ countries, representatives }: Props) {
             href={NEWSLETTER_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackFunnel("social_link_clicked", { network: "newsletter" })}
             className="rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:bg-ink/5"
           >
             Newsletter
@@ -624,7 +674,10 @@ export default function ContactForm({ countries, representatives }: Props) {
 
       <button
         type="button"
-        onClick={() => setStep(3)}
+        onClick={() => {
+          trackFunnel("write_another_clicked");
+          setStep(3);
+        }}
         className="mt-6 block w-full text-sm text-accent-dark underline hover:text-ink"
       >
         Escribirle a alguien más
@@ -636,6 +689,7 @@ export default function ContactForm({ countries, representatives }: Props) {
           href={REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackFunnel("repo_link_clicked")}
           className="font-semibold text-accent-dark underline hover:text-ink"
         >
           Colaborá en GitHub
