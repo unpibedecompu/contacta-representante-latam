@@ -73,7 +73,7 @@ const repSubtitle = (r: Representative) =>
     .filter(Boolean)
     .join(" · ");
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 interface Props {
   countries: CountryConfig[];
@@ -112,7 +112,6 @@ export default function ContactForm({ countries, representatives }: Props) {
   const [body, setBody] = useState("");
   const [bodyEdited, setBodyEdited] = useState(false);
 
-  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set());
   const [lastSent, setLastSent] = useState<Representative | null>(null);
   const [copied, setCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -177,7 +176,6 @@ export default function ContactForm({ countries, representatives }: Props) {
     if (!country || !name.trim() || matches.length === 0) return;
     setSubject(SUBJECT);
     if (!bodyEdited) setBody(buildBody({ userName: name.trim(), countryName: country.name }));
-    setSentKeys(new Set());
     setLastSent(null);
     setStep(2);
     trackFunnel("message_generated", {
@@ -187,40 +185,13 @@ export default function ContactForm({ countries, representatives }: Props) {
     });
   }
 
-  function markSent(rep: Representative, via: "gmail" | "outlook" | "form") {
-    setSentKeys((prev) => new Set(prev).add(repKey(rep)));
+  function handleContactOpened(rep: Representative, via: "gmail" | "outlook" | "form") {
     setLastSent(rep);
     trackFunnel("email_client_opened", {
       country: countryCode ?? "?",
       office: rep.office,
       channel: rep.channel ?? "email",
       provider: via,
-    });
-  }
-
-  /**
-   * Al clickear Gmail/Outlook sólo se abre el compositor y se registra el
-   * evento — no se marca como "Enviado" automáticamente. Eso lo decide la
-   * persona con el checkbox, porque no hay forma de saber si el mail
-   * realmente salió de su casilla.
-   */
-  function handleProviderOpen(rep: Representative, via: "gmail" | "outlook") {
-    setLastSent(rep);
-    trackFunnel("email_client_opened", {
-      country: countryCode ?? "?",
-      office: rep.office,
-      channel: rep.channel ?? "email",
-      provider: via,
-    });
-  }
-
-  function toggleSent(rep: Representative) {
-    setSentKeys((prev) => {
-      const next = new Set(prev);
-      const key = repKey(rep);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
     });
   }
 
@@ -238,7 +209,7 @@ export default function ContactForm({ countries, representatives }: Props) {
     if (!rep.formUrl) return;
     void writeClipboard(`${subject}\n\n${fullBody(rep.name, body)}`);
     window.open(rep.formUrl, "_blank", "noopener,noreferrer");
-    markSent(rep, "form");
+    handleContactOpened(rep, "form");
   }
 
   async function handleCopyFallback() {
@@ -350,7 +321,6 @@ export default function ContactForm({ countries, representatives }: Props) {
 
   /* ----------------------------- STEP 2 ----------------------------- */
   if (step === 2 && country && matches.length > 0) {
-    const anySent = sentKeys.size > 0;
     return (
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6">
         <div className="mb-3 flex items-center justify-between">
@@ -362,7 +332,7 @@ export default function ContactForm({ countries, representatives }: Props) {
             ← Volver
           </button>
           <button type="button" onClick={() => setStep(3)} className={CHIP_CLS}>
-            Terminé →
+            Ver representantes →
           </button>
         </div>
         <StepBadge step={2} />
@@ -392,13 +362,41 @@ export default function ContactForm({ countries, representatives }: Props) {
           className="w-full rounded-lg border border-ink/15 bg-white px-3 py-2 leading-relaxed"
         />
 
-        <h3 className="mb-1 mt-6 text-sm font-semibold">
+        <button
+          type="button"
+          onClick={() => setStep(3)}
+          className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
+        >
+          Ver representantes →
+        </button>
+      </div>
+    );
+  }
+
+  /* ----------------------------- STEP 3 ----------------------------- */
+  if (step === 3 && country && matches.length > 0) {
+    return (
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-ink/5 sm:p-6">
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="text-sm text-ink/50 hover:text-ink"
+          >
+            ← Volver
+          </button>
+          <button type="button" onClick={() => setStep(4)} className={CHIP_CLS}>
+            Terminé →
+          </button>
+        </div>
+        <StepBadge step={3} />
+
+        <h3 className="mb-1 text-sm font-semibold">
           Enviá tu mensaje{matches.length > 1 ? " a quien quieras" : ""}
         </h3>
 
         <ul className="space-y-2">
           {matches.map((rep) => {
-            const sent = sentKeys.has(repKey(rep));
             const composeParams = {
               to: rep.email,
               subject,
@@ -409,9 +407,7 @@ export default function ContactForm({ countries, representatives }: Props) {
             return (
               <li
                 key={repKey(rep)}
-                className={`flex flex-col gap-2 rounded-lg border px-3 py-2.5 transition sm:flex-row sm:items-center sm:justify-between ${
-                  sent ? "border-accent bg-accent/5" : "border-ink/15"
-                }`}
+                className="flex flex-col gap-2 rounded-lg border border-ink/15 px-3 py-2.5 transition sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -448,7 +444,7 @@ export default function ContactForm({ countries, representatives }: Props) {
                           target: "_blank",
                           rel: "noopener noreferrer",
                         })}
-                        onClick={() => handleProviderOpen(rep, "gmail")}
+                        onClick={() => handleContactOpened(rep, "gmail")}
                         className={btnCls}
                       >
                         Enviar con Gmail
@@ -463,24 +459,13 @@ export default function ContactForm({ countries, representatives }: Props) {
                           target: "_blank",
                           rel: "noopener noreferrer",
                         })}
-                        onClick={() => handleProviderOpen(rep, "outlook")}
+                        onClick={() => handleContactOpened(rep, "outlook")}
                         className={btnCls}
                       >
                         Enviar con Outlook
                       </a>
                     </>
                   )}
-                  <label className="flex shrink-0 cursor-pointer select-none items-center gap-1.5 text-[11px] font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={sent}
-                      onChange={() => toggleSent(rep)}
-                      className="h-3.5 w-3.5 rounded border-ink/30 text-accent-dark focus:ring-accent-dark"
-                    />
-                    <span className={sent ? "text-accent-dark" : "text-ink/50"}>
-                      Enviado
-                    </span>
-                  </label>
                 </div>
               </li>
             );
@@ -493,7 +478,7 @@ export default function ContactForm({ countries, representatives }: Props) {
           </p>
         )}
 
-        {anySent && (
+        {lastSent && (
           <p className="mt-4 rounded-lg bg-ink/5 p-3 text-sm text-ink/70">
             ¿No se abrió?{" "}
             <button
@@ -513,7 +498,7 @@ export default function ContactForm({ countries, representatives }: Props) {
 
         <button
           type="button"
-          onClick={() => setStep(3)}
+          onClick={() => setStep(4)}
           className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-semibold text-ink transition hover:bg-accent-dark"
         >
           Terminé →
@@ -522,14 +507,14 @@ export default function ContactForm({ countries, representatives }: Props) {
     );
   }
 
-  /* ----------------------------- STEP 3 ----------------------------- */
-  const n = sentKeys.size;
+  /* ----------------------------- STEP 4 ----------------------------- */
+  const n = matches.length;
   return (
     <div className="rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-ink/5 sm:p-6">
       <div className="mb-3 text-left">
         <button
           type="button"
-          onClick={() => setStep(2)}
+          onClick={() => setStep(3)}
           className="text-sm text-ink/50 hover:text-ink"
         >
           ← Volver
@@ -540,15 +525,9 @@ export default function ContactForm({ countries, representatives }: Props) {
       </div>
       <h2 className="text-xl font-bold">¡Gracias!</h2>
       <p className="mx-auto mt-2 max-w-md text-ink/70">
-        {n > 0 ? (
-          <>
-            Le escribiste a <strong>{n}</strong>{" "}
-            {n === 1 ? "representante" : "representantes"}. Revisá que el mail haya
-            salido de tu casilla.
-          </>
-        ) : (
-          <>Cuando quieras, volvé y escribile a tus representantes.</>
-        )}
+        Le escribiste a <strong>{n}</strong>{" "}
+        {n === 1 ? "representante" : "representantes"}. Revisá que el mail haya
+        salido de tu casilla.
       </p>
 
       <div className="mt-6">
@@ -645,7 +624,7 @@ export default function ContactForm({ countries, representatives }: Props) {
 
       <button
         type="button"
-        onClick={() => setStep(2)}
+        onClick={() => setStep(3)}
         className="mt-6 block w-full text-sm text-accent-dark underline hover:text-ink"
       >
         Escribirle a alguien más
@@ -670,7 +649,7 @@ export default function ContactForm({ countries, representatives }: Props) {
 function StepBadge({ step }: { step: number }) {
   return (
     <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-ink/40">
-      Paso {step} de 3
+      Paso {step} de 4
     </p>
   );
 }
